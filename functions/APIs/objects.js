@@ -1,3 +1,4 @@
+const { linkWithPhoneNumber } = require("firebase/auth");
 const { db } = require("../util/admin");
 
 exports.getAllObjects = (request, response) => {
@@ -7,10 +8,8 @@ exports.getAllObjects = (request, response) => {
       let objects = [];
       data.forEach((doc) => {
         objects.push({
-          objectId: doc.id,
-          name: doc.data().name,
-          definition: doc.data().definition,
-          createdAt: doc.data().createdAt,
+          id: doc.id,
+          ...doc.data(),
         });
       });
       return response.json(objects);
@@ -22,7 +21,7 @@ exports.getAllObjects = (request, response) => {
 };
 
 exports.getObject = (request, response) => {
-  db.doc(`/objects/${request.params.todoId}`)
+  db.doc(`/objects/${request.params.id}`)
     .get()
     .then((doc) => {
       if (!doc.exists) {
@@ -31,8 +30,8 @@ exports.getObject = (request, response) => {
         });
       }
       objectData = doc.data();
-      objectData.objectId = doc.id;
-      return response.json(objectData);
+      objectData.id = doc.id;
+      return response.json({ id: doc.id, ...objectData });
     })
     .catch((err) => {
       console.error(err);
@@ -40,30 +39,32 @@ exports.getObject = (request, response) => {
     });
 };
 
-exports.postObject = (request, response) => {
-  if (request.body.body.trim() === "") {
-    return response.status(400).json({ body: "Must not be empty" });
+exports.postObject = async (request, response) => {
+  if (request.body.name == null) {
+    return response.status(400).json({ name: "Must not be empty" });
   }
-
   if (request.body.name.trim() === "") {
     return response.status(400).json({ name: "Must not be empty" });
   }
+
   const newDoc = {
-    name: request.body.name,
-    definition: request.body.definition,
+    ...request.body,
     createdAt: new Date().toISOString(),
   };
-  db.collection("objects")
-    .add(newDoc)
-    .then((doc) => {
-      const responseDoc = newDoc;
-      responseDoc.id = doc.id;
-      return response.json(responseDoc);
-    })
-    .catch((err) => {
-      response.status(500).json({ error: "Something went wrong" });
-      console.error(err);
-    });
+
+  try {
+    let query = db.collection("objects").where("name", "==", newDoc.name);
+    let result = await query.limit(1).get();
+    if (result.docs.length != 0) {
+      return response.status(400).json({ name: `(${newDoc.name}) Name of object already exists` });
+    }
+    let coln = db.collection("objects");
+    let doc = await coln.add(newDoc);
+    return response.json({ id: doc.id, ...newDoc });
+  } catch (e) {
+    response.status(500).json({ error: "Something went wrong" });
+    console.error(e);
+  }
 };
 
 exports.deleteObject = (request, response) => {

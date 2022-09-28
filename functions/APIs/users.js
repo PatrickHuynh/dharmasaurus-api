@@ -1,3 +1,7 @@
+const config = require("../util/config");
+const firebase = require("firebase/app");
+firebase.initializeApp(config);
+
 const { admin, db } = require("../util/admin");
 const { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword } = require("firebase/auth");
 
@@ -29,12 +33,10 @@ exports.loginUser = (request, response) => {
 
 exports.signUpUser = (request, response) => {
   const newUser = {
-    firstName: request.body.firstName,
-    lastName: request.body.lastName,
+    username: request.body.username,
     email: request.body.email,
     password: request.body.password,
     confirmPassword: request.body.confirmPassword,
-    username: request.body.username,
   };
 
   //   const { valid, errors } = validateSignUpData(newUser);
@@ -58,8 +60,6 @@ exports.signUpUser = (request, response) => {
     .then((idtoken) => {
       token = idtoken;
       const userCredentials = {
-        firstName: newUser.firstName,
-        lastName: newUser.lastName,
         username: newUser.username,
         email: newUser.email,
         createdAt: new Date().toISOString(),

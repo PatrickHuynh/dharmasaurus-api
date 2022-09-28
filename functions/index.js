@@ -6,10 +6,10 @@ const { getAllObjects, getObject, postObject, deleteObject, editObject } = requi
 const { loginUser, signUpUser } = require("./APIs/users");
 
 app.get("/objects", getAllObjects);
-app.get("/objects/:objectId", getObject);
-app.post("/objects", postObject);
-app.delete("/objects/:objectId", deleteObject);
-app.put("/objects/:objectId", editObject);
+app.get("/objects/:id", getObject);
+app.post("/objects", auth, postObject);
+app.delete("/objects/:objectId", auth, deleteObject);
+app.put("/objects/:objectId", auth, editObject);
 
 app.post("/login", loginUser);
 app.post("/signup", signUpUser);
