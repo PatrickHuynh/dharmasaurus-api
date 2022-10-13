@@ -1,4 +1,3 @@
-const { linkWithPhoneNumber } = require("firebase/auth");
 const { db } = require("../util/admin");
 
 exports.getAllObjects = (request, response) => {
@@ -21,7 +20,7 @@ exports.getAllObjects = (request, response) => {
 };
 
 exports.getObject = (request, response) => {
-  db.doc(`/objects/${request.params.id}`)
+  db.doc(`/objects/${request.params.objectId}`)
     .get()
     .then((doc) => {
       if (!doc.exists) {
