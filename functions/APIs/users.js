@@ -1,10 +1,10 @@
 const { firebaseConfig } = require("../util/config");
 const firebase = require("firebase/app");
-firebase.initializeApp(firebaseConfig);
 
-const { admin, db } = require("../util/admin");
+const { db } = require("../util/admin");
 const { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword } = require("firebase/auth");
 
+const app = firebase.initializeApp(firebaseConfig);
 //const { validateLoginData, validateSignUpData } = require("../util/validators");
 
 // Login
@@ -17,7 +17,7 @@ exports.loginUser = (request, response) => {
   //const { valid, errors } = validateLoginData(user);
   //if (!valid) return response.status(400).json(errors);
 
-  const auth = getAuth();
+  const auth = getAuth(app);
   signInWithEmailAndPassword(auth, user.email, user.password)
     .then((data) => {
       return data.user.getIdToken();
@@ -31,24 +31,67 @@ exports.loginUser = (request, response) => {
     });
 };
 
+const isEmpty = (string) => {
+  if (string.trim() === "") return true;
+  else return false;
+};
+
+const isValidEmail = (email) => {
+  const validRegex = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+  if (email.match(validRegex)) return true;
+  else return false;
+};
+
+const isValidUsername = (username) => {
+  const validRegex = /^[A-Za-z]+$/;
+  if (username.match(validRegex)) return true;
+  else return false;
+};
+
+const isValidSignUpData = (data) => {
+  let errors = {};
+
+  if (isEmpty(data.username)) {
+    errors.username = "Must not be empty";
+  } else if (!isValidUsername(data.username)) {
+    errors.username = "Can only be upper or lowercase letters with no spaces";
+  }
+
+  if (isEmpty(data.email)) {
+    errors.email = "Must not be empty";
+  } else if (!isValidEmail(data.email)) {
+    errors.email = "Must be valid email address";
+  }
+
+  if (isEmpty(data.password)) {
+    errors.password = "Must not be empty";
+  } else if (data.password.length < 6) {
+    errors.password = "Must be at least 6 characters";
+  }
+
+  return {
+    errors,
+    valid: Object.keys(errors).length === 0,
+  };
+};
+
 exports.signUpUser = (request, response) => {
   const newUser = {
     username: request.body.username,
     email: request.body.email,
     password: request.body.password,
-    confirmPassword: request.body.confirmPassword,
   };
 
-  //   const { valid, errors } = validateSignUpData(newUser);
-  //   if (!valid) return response.status(400).json(errors);
+  const { valid, errors } = isValidSignUpData(newUser);
+  if (!valid) return response.status(400).json(errors);
 
   let token, userId;
   db.doc(`/users/${newUser.username}`)
     .get()
     .then((doc) => {
-      const auth = getAuth();
+      const auth = getAuth(app);
       if (doc.exists) {
-        return response.status(400).json({ username: "this username is already taken" });
+        return response.status(400).json({ username: "This username has already been taken" });
       } else {
         return createUserWithEmailAndPassword(auth, newUser.email, newUser.password);
       }
@@ -77,6 +120,22 @@ exports.signUpUser = (request, response) => {
       } else {
         return response.status(500).json({ general: "Something went wrong, please try again" });
       }
+    });
+};
+
+exports.getUserDetail = (request, response) => {
+  let userData = {};
+  db.doc(`/users/${request.user.username}`)
+    .get()
+    .then((doc) => {
+      if (doc.exists) {
+        userData.userCredentials = doc.data();
+        return response.json(userData);
+      }
+    })
+    .catch((error) => {
+      console.error(error);
+      return response.status(500).json({ error: error.code });
     });
 };
 
@@ -145,22 +204,6 @@ exports.signUpUser = (request, response) => {
 //   });
 //   busboy.end(request.rawBody);
 // };
-
-exports.getUserDetail = (request, response) => {
-  let userData = {};
-  db.doc(`/users/${request.user.username}`)
-    .get()
-    .then((doc) => {
-      if (doc.exists) {
-        userData.userCredentials = doc.data();
-        return response.json(userData);
-      }
-    })
-    .catch((error) => {
-      console.error(error);
-      return response.status(500).json({ error: error.code });
-    });
-};
 
 // exports.updateUserDetails = (request, response) => {
 //   let document = db.collection("users").doc(`${request.user.username}`);
