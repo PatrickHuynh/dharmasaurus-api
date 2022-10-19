@@ -13,7 +13,7 @@ module.exports = (request, response, next) => {
     .verifyIdToken(idToken)
     .then((decodedToken) => {
       request.user = decodedToken;
-      return db.collection("users").where("userId", "==", request.user.uid).limit(1).get();
+      return db.collection("users").where("uid", "==", request.user.uid).limit(1).get();
     })
     .then((data) => {
       request.user.username = data.docs[0].data().username;
