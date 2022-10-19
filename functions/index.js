@@ -3,10 +3,13 @@ const app = require("express")();
 const auth = require("./util/auth");
 const cors = require("cors");
 
+const { getAllSiteEvents } = require("./APIs/siteLoadEvents");
 const { getAllObjects, getObject, postObject, deleteObject, editObject } = require("./APIs/objects");
 const { loginUser, signUpUser } = require("./APIs/users");
 
 app.use(cors({ origin: true }));
+
+app.get("/siteEvents", auth, getAllSiteEvents);
 
 app.get("/objects", getAllObjects);
 app.get("/objects/:objectId", getObject);

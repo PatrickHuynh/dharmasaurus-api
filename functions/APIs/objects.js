@@ -1,13 +1,20 @@
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const { BSONTypeError } = require("bson");
 const { mongodbConfig } = require("../util/config");
-
+const { db } = require("../util/admin");
 const client = new MongoClient(mongodbConfig.uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
 
 exports.getAllObjects = async (request, response) => {
   try {
     await client.connect();
     const results = await client.db("main").collection("objects").find().toArray();
+    let clientIP = request.headers["x-forwarded-for"] || request.socket.remoteAddress;
+    clientIP = clientIP ? clientIP : "unknown";
+    db.collection("siteLoadEvents").add({
+      name: "/definitions/getAllObjects",
+      fromIP: clientIP,
+      time: new Date.now(),
+    });
     return response.status(200).json(results);
   } catch (e) {
     console.log(e);
