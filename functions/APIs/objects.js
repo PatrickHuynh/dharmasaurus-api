@@ -13,7 +13,7 @@ exports.getAllObjects = async (request, response) => {
     db.collection("siteLoadEvents").add({
       name: "/definitions/getAllObjects",
       fromIP: clientIP,
-      time: new Date.now(),
+      time: Math.round(new Date().getTime() / 1000),
     });
     return response.status(200).json(results);
   } catch (e) {
