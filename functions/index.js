@@ -9,7 +9,6 @@ const { getDojoDefAppState, upsertDojoDefAppState } = require("./APIs/dojoDefini
 const { loginUser, signUpUser } = require("./APIs/users");
 
 app.use(cors({ origin: "*", preflightContinue: true }));
-
 app.get("/siteEvents", auth, getAllSiteEvents);
 
 app.get("/objects", getAllObjects);
