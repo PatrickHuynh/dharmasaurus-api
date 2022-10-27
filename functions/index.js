@@ -8,7 +8,7 @@ const { getAllObjects, getObject, postObject, deleteObject, editObject } = requi
 const { getDojoDefAppState, upsertDojoDefAppState } = require("./APIs/dojoDefinitionAppStates");
 const { loginUser, signUpUser } = require("./APIs/users");
 
-app.use(cors({ origin: true }));
+app.use(cors({ origin: "*", preflightContinue: true }));
 
 app.get("/siteEvents", auth, getAllSiteEvents);
 
